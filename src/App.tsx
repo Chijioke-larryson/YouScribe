@@ -22,7 +22,8 @@ function App() {
           <section className="min-h-screen flex-col">
            <Header />
               { boolCheck ? (
-                  <FileDisplay file={file} audioStream={setAudioStream}/>
+                  <FileDisplay file={file} audioStream={setAudioStream}
+                               handleAudioReset={handleAudioReset}/>
 
               ) :(
                   <HomePage  setFile={setFile}
@@ -31,7 +32,9 @@ function App() {
               }
           </section>
           <h1 className="text-green-600"> Hello</h1>
-          <footer></footer>
+          <footer>
+              <p className="flex mx-auto items-center justify-center">Built By <br/> <span className="text-blue-400"><a href='https://github.com/Chijioke-larryson' target='_blank'>Larryson Chijioke </a></span> </p>
+          </footer>
       </div>
 
 
