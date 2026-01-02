@@ -22,7 +22,7 @@ export default function HomePage(props) {
         console.log('start recording')
 
         try{
-            const streamData = navigator.mediaDevices.getUserMedia(
+            const streamData =  await navigator.mediaDevices.getUserMedia(
                 {audio: true,
                 video: false
                 }
@@ -62,7 +62,8 @@ export default function HomePage(props) {
             const audioBlob = new Blob(audioChunks, {type: mimeType})
 
             setAudioStream(audioBlob)
-          setAudioChunks([])
+            setAudioChunks([])
+
             setDuration(0)
         }
     }
@@ -81,7 +82,7 @@ export default function HomePage(props) {
 
     return (
         <div>
-            <main className="flex-1  p-4 flex flex-col gap-3 text-center sm:gap-4 md:gap-5 justify-center pb-10">
+            <main className="flex-1  p-4 flex flex-col gap-3 text-center sm:gap-4 justify-center pb-10">
                 <h1 className="font-semibold text-5xl sm:text-4xl">You<span className="text-blue-400 bold">Scribe</span></h1>
                 <h3 className="font-medium md:text-lg"> Record<span className="text-blue-400">
                     &rarr;
@@ -91,17 +92,18 @@ export default function HomePage(props) {
                 </span>Translate
 
                 </h3>
-                <button className="flex specialBtn px-4 py-2 rounded-xl  items-center text-base justify-between gap-4 mx-auto w-72 max-w-full my-4">
-                    <p className="text-blue-400">{recordingStatus == 'inactive ' ? 'Record' : `Stop recording`}</p>
+                <button  onClick={ recordingStatus === 'recording' ? stopRecording : startRecording} className="flex specialBtn px-4 py-2 rounded-xl  items-center text-base justify-between gap-4 mx-auto w-72 max-w-full my-4">
+                    <p className="text-blue-400">{recordingStatus ==='inactive' ? 'Record' : `Stop recording`}</p>
                     <div className="flex items-center gap-2 ">
 
-                        {duration && (
-                            <p className='text-sm text-blue-600'>{duration}s</p>
+                        {duration != 0 && (
+                            <p className='text-sm'>{duration}s</p>
                         )}
+                        <i className={"fa-solid  duration-200 fa-microphone" + (recordingStatus === 'recording' ? 'text-rose-200': "")}></i>
+
                     </div>
-                    <i className={"fa-solid fa-microphone" + (recordingStatus === 'recording' ? 'text-rose-300': "")}></i>
                 </button>
-                <p>
+                <p className='text-base'>
                     Or <label className="text-blue-400 cursor-pointer hover:text-blue-600 duration-200">upload<input onChange={(e) =>{
                         const tempFile = e.target.files[0]
                         setFile(tempFile)
