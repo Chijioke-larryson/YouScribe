@@ -2,12 +2,14 @@ import {useState} from "react";
 import Header from "./components/Header.tsx";
 import FileDisplay from "./components/FileDisplay.tsx";
 import HomePage from "./components/HomePage.tsx";
+import Information from "./components/Information.tsx";
+import Transcribing from "./components/Transcribing.tsx";
 
 function App() {
     const [file, setFile] = useState(null);
     const [audioStream, setAudioStream] = useState(null);
-    const [output, setOutput] = useState(null)
-    const [ loading, setLoading] = useState(false)
+    const [output, setOutput] = useState(true)
+    const [loading, setLoading] = useState(true)
 
     const isAudioAvailable = !!(file || audioStream);
 
@@ -20,19 +22,26 @@ function App() {
         <div className="flex flex-col p-4 max-v-[1000px] mx-auto w-full">
             <section className="min-h-screen flex-col">
                 <Header />
-
-                {isAudioAvailable ? (
+                { output ? (
+                    <Information />
+                ): loading ? (
+                    <Transcribing/>
+                ): isAudioAvailable ? (
                     <FileDisplay
                         file={file}
                         audioStream={audioStream}
                         handleAudioReset={handleAudioReset}
                     />
-                ) : (
+
+                ): (
                     <HomePage
                         setFile={setFile}
                         setAudioStream={setAudioStream}
                     />
+
                 )}
+
+
             </section>
 
             <footer>

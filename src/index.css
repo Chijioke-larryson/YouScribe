@@ -118,3 +118,52 @@
 .specialBtn:hover {
   opacity: 0.8;
 }
+
+.loading {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+          90deg,
+          #93c5fd,
+          #3b82f6,
+          #93c5fd
+  );
+  margin-right: auto;
+  animation: loading-width 1.6s ease-in-out infinite;
+  transform-origin: left;
+}
+
+.loading1 {
+  animation-delay: 0s;
+  opacity: 0.9;
+}
+
+.loading2 {
+  animation-delay: 0.3s;
+  opacity: 0.6;
+}
+
+/* smoother, intentional animation */
+@keyframes loading-width {
+  0% {
+    width: 20%;
+    opacity: 0.4;
+  }
+
+  50% {
+    width: 100%;
+    opacity: 1;
+  }
+
+  100% {
+    width: 20%;
+    opacity: 0.4;
+  }
+}
+
+.loading {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+.loading {
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
