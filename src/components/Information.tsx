@@ -1,10 +1,12 @@
 import {useState} from "react";
+import Transcription from "./Transcription.tsx";
+import Translation from "./Translation.tsx";
 
 
 const Information = () => {
     const [tab, setTab] = useState('transcription')
     return (
-        <div>
+
 
             <main className="flex-1  p-4 flex flex-col gap-3 text-center
              sm:gap-4 justify-center pb-10
@@ -41,9 +43,14 @@ const Information = () => {
 
 
                 </div>
+                {tab == 'transcription' ? (
+                    <Transcription />
+                ): (
+                    <Translation />
+                )}
 
             </main>
-        </div>
+
     )
 }
 export default Information
