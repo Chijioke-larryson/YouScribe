@@ -1,124 +1,141 @@
-import { pipeline } from "@xenova/transformers";
-import { MessageTypes } from "../utils/preset.ts";
+import { pipeline, Pipeline } from '@xenova/transformers';
+import { MessageTypes } from '../utils/preset';
+
+type AudioArray = Float32Array | Blob;
 
 class MyTranscriptionPipeline {
-    static task = "automatic-speech-recognition";
-    static model = "openai/whisper-tiny.en";
-    static instance = null;
+    static task = 'automatic-speech-recognition';
+    static model = 'openai/whisper-tiny.en';
+    static instance: Pipeline | null = null;
 
-    static async getInstance(progress_callback = null) {
+    static async getInstance(progress_callback?: (data: any) => void): Promise<Pipeline> {
         if (!this.instance) {
-            this.instance = await pipeline(this.task, this.model, {
-                progress_callback,
-            });
+            this.instance = await pipeline(this.task, this.model, { progress_callback }) as Pipeline;
         }
         return this.instance;
     }
 }
 
-self.addEventListener("message", async (event) => {
-    if (event.data.type === MessageTypes.INFERENCE_REQUEST) {
-        try {
-            await transcribe(event.data.audio);
-        } catch (err) {
-            self.postMessage({
-                type: MessageTypes.ERROR,
-                error: err instanceof Error ? err.message : String(err),
-            });
-        }
+// Type the Worker scope
+const workerScope = self as unknown as DedicatedWorkerGlobalScope;
+
+workerScope.addEventListener('message', async (event: MessageEvent) => {
+    const { type, audio } = event.data;
+    if (type === MessageTypes.INFERENCE_REQUEST) {
+        await transcribe(audio);
     }
 });
 
-async function transcribe(audio) {
-    sendLoadingMessage("loading");
+async function transcribe(audio: AudioArray) {
+    sendLoadingMessage('loading');
 
-    const asr = await MyTranscriptionPipeline.getInstance(loadModelCallback);
+    let pipelineInstance: Pipeline | null = null;
+    try {
+        pipelineInstance = await MyTranscriptionPipeline.getInstance(loadModelCallback);
+    } catch (err: unknown) {
+        if (err instanceof Error) console.error(err.message);
+    }
 
-    const tracker = new GenerationTracker(asr, 5);
+    if (!pipelineInstance) return;
 
-    await asr(audio, {
-        chunk_length_s: 30,
-        stride_length_s: 5,
+    sendLoadingMessage('success');
+
+    const stride_length_s = 5;
+    const generationTracker = new GenerationTracker(pipelineInstance, stride_length_s);
+
+    await pipelineInstance(audio, {
+        top_k: 0,
+        do_sample: false,
+        chunk_length: 30,
+        stride_length_s,
         return_timestamps: true,
-        callback_function: tracker.callbackFunction.bind(tracker),
-        chunk_callback: tracker.chunkCallback.bind(tracker),
+        callback_function: generationTracker.callbackFunction.bind(generationTracker),
+        chunk_callback: generationTracker.chunkCallback.bind(generationTracker),
     });
 
-    tracker.sendFinalResult();
+    generationTracker.sendFinalResult();
 }
 
-function loadModelCallback(data) {
-    if (data.status === "progress") {
-        self.postMessage({
-            type: MessageTypes.DOWNLOADING,
-            file: data.file,
-            progress: data.progress,
-            loaded: data.loaded,
-            total: data.total,
-        });
+async function loadModelCallback(data: any) {
+    if (data.status === 'progress') {
+        sendDownloadingMessage(data.file, data.progress, data.loaded, data.total);
     }
 }
 
-function sendLoadingMessage(status) {
-    self.postMessage({
-        type: MessageTypes.LOADING,
-        status,
-    });
+function sendLoadingMessage(status: string) {
+    workerScope.postMessage({ type: MessageTypes.LOADING, status });
+}
+
+function sendDownloadingMessage(file: string, progress: number, loaded: number, total: number) {
+    workerScope.postMessage({ type: MessageTypes.DOWNLOADING, file, progress, loaded, total });
 }
 
 class GenerationTracker {
-    constructor(pipeline, stride_length_s) {
+    pipeline: Pipeline;
+    stride_length_s: number;
+    chunks: any[] = [];
+    processed_chunks: any[] = [];
+    time_precision: number;
+    callbackFunctionCounter: number = 0;
+
+    constructor(pipeline: Pipeline, stride_length_s: number) {
         this.pipeline = pipeline;
         this.stride_length_s = stride_length_s;
-        this.chunks = [];
-        this.processed_chunks = [];
+        this.time_precision =
+            pipeline.processor.feature_extractor.config.chunk_length /
+            pipeline.model.config.max_source_positions;
     }
 
-    callbackFunction(beams) {
-        if (!beams?.length) return;
+    sendFinalResult() {
+        workerScope.postMessage({ type: MessageTypes.INFERENCE_DONE });
+    }
+
+    callbackFunction(beams: any[]) {
+        this.callbackFunctionCounter += 1;
+        if (this.callbackFunctionCounter % 10 !== 0) return;
 
         const bestBeam = beams[0];
-        const text = this.pipeline.tokenizer.decode(
-            bestBeam.output_token_ids,
-            { skip_special_tokens: true }
-        );
-
-        self.postMessage({
-            type: MessageTypes.RESULT_PARTIAL,
-            result: { text },
-        });
+        const text = this.pipeline.tokenizer.decode(bestBeam.output_token_ids, { skip_special_tokens: true });
+        const result = {
+            text,
+            start: this.getLastChunkTimestamp(),
+            end: undefined,
+        };
+        workerScope.postMessage({ type: MessageTypes.RESULT_PARTIAL, result });
     }
 
-    chunkCallback(data) {
+    chunkCallback(data: any) {
         this.chunks.push(data);
+        const [text, { chunks }] = this.pipeline.tokenizer._decode_asr(this.chunks, {
+            time_precision: this.time_precision,
+            return_timestamps: true,
+            force_full_sequence: false,
+        });
 
-        const [_, { chunks }] =
-            this.pipeline.tokenizer._decode_asr(this.chunks, {
-                return_timestamps: true,
-            });
-
-        this.processed_chunks = chunks.map((c, i) =>
-            this.processChunk(c, i)
+        this.processed_chunks = chunks.map((chunk: { text: string; timestamp: [number, number] }, index: number) =>
+            this.processChunk(chunk, index)
         );
 
-        self.postMessage({
+        workerScope.postMessage({
             type: MessageTypes.RESULT,
             results: this.processed_chunks,
             isDone: false,
+            completedUntilTimestamp: this.getLastChunkTimestamp(),
         });
     }
 
-    processChunk(chunk, index) {
+    getLastChunkTimestamp(): number {
+        if (this.processed_chunks.length === 0) return 0;
+        return this.processed_chunks[this.processed_chunks.length - 1].end ?? 0;
+    }
+
+    processChunk(chunk: { text: string; timestamp: [number, number] }, index: number) {
         const [start, end] = chunk.timestamp;
         return {
             index,
             text: chunk.text.trim(),
             start: Math.round(start),
-            end: Math.round(end ?? start + 1),
+            end: Math.round(end) || Math.round(start + 0.9 * this.stride_length_s),
         };
-    }
-
-    sendFinalResult() {
-        self.postMessage({ type: MessageTypes.INFERENCE_DONE });
     }
 }

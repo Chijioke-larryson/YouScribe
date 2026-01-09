@@ -5,27 +5,22 @@ export const MessageTypes = {
     RESULT_PARTIAL: "RESULT_PARTIAL",
     INFERENCE_REQUEST: "INFERENCE_REQUEST",
     INFERENCE_DONE: "INFERENCE_DONE",
-    ERROR: "ERROR",
-    CANCELLED: "CANCELLED",
-} as const ;
+};
 
 export const LoadingStatus = {
-    IDLE: "idle",
     SUCCESS: "success",
     ERROR: "error",
     LOADING: "loading",
-} as const ;
+};
 
 export const ModelNames = {
-    DEFAULT: "openai/whisper-small.en",
-
     WHISPER_TINY_EN: "openai/whisper-tiny.en",
     WHISPER_TINY: "openai/whisper-tiny",
     WHISPER_BASE: "openai/whisper-base",
     WHISPER_BASE_EN: "openai/whisper-base.en",
     WHISPER_SMALL: "openai/whisper-small",
     WHISPER_SMALL_EN: "openai/whisper-small.en",
-} as const ;
+};
 
 export const LANGUAGES = {
     "Acehnese (Arabic script)": "ace_Arab",
@@ -232,33 +227,4 @@ export const LANGUAGES = {
     "Yoruba": "yor_Latn",
     "Yue Chinese": "yue_Hant",
     "Zulu": "zul_Latn",
-    "Albanian": "sqi_Latn",
-    "Breton": "bre_Latn",
-    "Cornish": "cor_Latn",
-    "Frisian": "fry_Latn",
-    "Manx": "glv_Latn",
-    "Romansh": "roh_Latn",
-    "Walloon": "wln_Latn",
-    "Veneto": "vec_Latn",
-    "Upper Sorbian": "hsb_Latn",
-    "Lower Sorbian": "dsb_Latn",
-    "Edo": "bin_Latn",
-    "Efik": "efi_Latn",
-    "Ibibio": "ibb_Latn",
-    "Tiv": "tiv_Latn",
-    "Nupe": "nup_Latn",
-    "Kanuri": "kau_Latn",
-    "Xitsonga": "xitsonga_Latn",
-    "Xitsonga (Tsonga alt)": "tso_Latn",
-    "Xitsonga Shangaan": "sgn_Latn",
-    "Xitsonga Ronga": "rng_Latn",
-    "Xitsonga Tswa": "tsc_Latn",
-    "Chinese (Cantonese Romanized)": "yue_Latn",
-    "Chinese (Wu)": "wuu_Hans",
-    "Chinese (Min Nan)": "nan_Latn",
-    "Chinese (Hakka)": "hak_Hant",
-    "Japanese (Romaji)": "jpn_Latn",
-    "Korean (Romanized)": "kor_Latn",
-
-
-} as const
+}
