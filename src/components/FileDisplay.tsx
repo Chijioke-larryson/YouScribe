@@ -2,7 +2,7 @@
 
 export default function FileDisplay(props) {
 
-    const {handleAudioReset, file, audioStream} = props
+    const {handleAudioReset, file, audioStream, handleFormSubmission} = props
 
     return (
         <main className="flex-1  p-4 flex flex-col gap-3 text-center sm:gap-4 justify-center pb-10 sm:w-96 w-fit w-72 max-w-full mx-auto">
@@ -15,7 +15,7 @@ export default function FileDisplay(props) {
             <div className=" flex items-center justify-between gap-4">
                 <button onClick={handleAudioReset} className="text-slate-400 hover:text-blue-600 duration-200">Reset
                 </button>
-                <button className="specialBtn  px-3 p-2 rounded-lg text-blue-400 flex items-center gap-2 font-medium ">
+                <button onClick={handleFormSubmission} className="specialBtn  px-3 p-2 rounded-lg text-blue-400 flex items-center gap-2 font-medium ">
                     <p>Transcribe</p>
                     <i className="fa-solid fa-microphone-lines text-sm"></i>
 

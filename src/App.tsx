@@ -4,7 +4,7 @@ import FileDisplay from "./components/FileDisplay.tsx";
 import HomePage from "./components/HomePage.tsx";
 import Information from "./components/Information.tsx";
 import Transcribing from "./components/Transcribing.tsx";
-import { MessageTypes } from "../utils/preset.ts";
+import { MessageTypes } from "./utils/preset.ts";
 
 
 
@@ -31,7 +31,7 @@ function App() {
 
     useEffect(() => {
         if (!worker.current){
-            worker.current = new Worker(new URL('./utils/whisper.worker.ts', import.meta.url),{
+            worker.current = new Worker(new URL("./workers/whisper.worker.ts", import.meta.url),{
                 type: 'module'
             })
         }
@@ -60,11 +60,12 @@ function App() {
                     setStatus("error");
 
                     const errorMsg =
-                        message?.error ?? "Something went wrong during inference";
+                        e.data?.error ?? "Something went wrong during inference";
 
                     setError(errorMsg);
                     console.error(errorMsg);
                     break;
+
 
 
                 case "IDLE":
@@ -84,7 +85,7 @@ function App() {
 
 
     async function readAudioFrom(file){
-        const sampling_rate = 1600
+        const sampling_rate = 16000
         const audioCTX = new AudioContext({sampleRate: sampling_rate})
         const response = await file.arrayBuffer()
         const decoded = await audioCTX.decodeAudioData(response)
@@ -114,6 +115,7 @@ function App() {
                     <Transcribing/>
                 ): isAudioAvailable ? (
                     <FileDisplay
+                         handleFormSubmission={handleFormSubmission}
                         file={file}
                         audioStream={audioStream}
                         handleAudioReset={handleAudioReset}
